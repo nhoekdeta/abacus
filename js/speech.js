@@ -1,12 +1,23 @@
 /* Read-aloud narration for pre-readers. Uses the browser's built-in
-   speechSynthesis (no audio files). Khmer needs a Khmer TTS voice on the
-   device (most Android tablets have one via Google); otherwise it stays quiet
-   for Khmer and English narration still works. */
+   speechSynthesis (no audio files).
+
+   English TTS is on essentially every device. Khmer TTS is not always
+   installed: it ships on most Android tablets (Google TTS), on iOS/iPadOS
+   after the "Khmer" voice is downloaded in Settings, and on ChromeOS, but
+   is usually absent on Windows/desktop Chrome. So for Khmer we:
+     1. use a real Khmer voice if one is enumerated;
+     2. otherwise still attempt with lang "km-KH" — Android / iOS / ChromeOS
+        resolve by language even when getVoices() is incomplete;
+     3. if that first attempt reports the language is unavailable, go quiet
+        for Khmer and let the Settings screen explain how to add the voice. */
 window.Speech = (function () {
 
   const synth = ("speechSynthesis" in window) ? window.speechSynthesis : null;
   let enabled = true;
   let voices = [];
+
+  // Khmer engine status: "unknown" until we've tried, then "ok" or "missing".
+  let kmStatus = "unknown";
 
   function loadVoices() { voices = synth ? (synth.getVoices() || []) : []; }
   if (synth) {
@@ -14,9 +25,17 @@ window.Speech = (function () {
     try { synth.addEventListener("voiceschanged", loadVoices); } catch (e) { synth.onvoiceschanged = loadVoices; }
   }
 
+  function isKmVoice(v) {
+    const lang = (v.lang || "").toLowerCase().replace("_", "-");
+    const name = (v.name || "").toLowerCase();
+    return lang.startsWith("km") || lang.startsWith("khm") ||
+           name.includes("khmer") || name.includes("cambodia");
+  }
+
   function pickVoice(lang) {
     if (!voices.length) loadVoices();
-    const want = lang === "km" ? ["km-kh", "km"] : ["en-us", "en-gb", "en-au", "en"];
+    if (lang === "km") return voices.find(isKmVoice) || null;
+    const want = ["en-us", "en-gb", "en-au", "en"];
     for (const w of want) {
       const v = voices.find(v => (v.lang || "").toLowerCase().replace("_", "-").startsWith(w));
       if (v) return v;
@@ -24,9 +43,10 @@ window.Speech = (function () {
     return null;
   }
 
+  // Optimistic: assume Khmer can work until an attempt proves otherwise.
   function available(lang) {
     if (!synth) return false;
-    if (lang === "km") return !!pickVoice("km");
+    if (lang === "km") return kmStatus !== "missing";
     return true; // English is essentially always present
   }
 
@@ -51,17 +71,44 @@ window.Speech = (function () {
   function say(text, lang, fromHtml) {
     if (!enabled || !synth) return;
     lang = lang || (window.I18N ? I18N.getLang() : "en");
+
     const v = pickVoice(lang);
-    if (lang === "km" && !v) return; // don't read Khmer with a non-Khmer voice
+    const isKm = lang === "km";
+
+    // Khmer with no voice, and a previous attempt already told us it's not
+    // supported here — stay silent rather than mangle it with an English voice.
+    if (isKm && !v && kmStatus === "missing") return;
+
     const words = fromHtml ? toText(text, lang) : String(text).replace(EMOJI, "").trim();
     if (!words) return;
+
     try {
       synth.cancel();
       const u = new SpeechSynthesisUtterance(words);
-      if (v) { u.voice = v; u.lang = v.lang; }
-      else { u.lang = lang === "km" ? "km-KH" : "en-US"; }
+      if (v) {
+        u.voice = v; u.lang = v.lang;
+        if (isKm) kmStatus = "ok";
+      } else {
+        u.lang = isKm ? "km-KH" : "en-US";
+      }
       u.rate = 0.9;
       u.pitch = 1.05;
+
+      if (isKm) {
+        let settled = false;
+        const mark = (s) => { settled = true; kmStatus = s; };
+        u.addEventListener("start", () => mark("ok"));
+        u.addEventListener("end", () => { if (!settled) mark("ok"); });
+        u.addEventListener("error", (e) => {
+          const err = (e && e.error) || "";
+          if (err === "interrupted" || err === "canceled" || err === "not-allowed") return;
+          mark("missing");
+        });
+        // Some engines just do nothing for an unsupported language — no start,
+        // no error. If we've heard nothing back shortly, treat it as missing.
+        setTimeout(() => { if (!settled && kmStatus === "unknown") kmStatus = "missing"; }, 2000);
+      }
+
       synth.speak(u);
     } catch (e) {}
   }
@@ -74,5 +121,12 @@ window.Speech = (function () {
     isEnabled: () => enabled,
     supported: () => !!synth,
     available,
+    /* "voice" (a real Khmer voice is installed), "trying" (no enumerated voice
+       yet, but we haven't hit a failure), or "missing" (proven unavailable). */
+    kmState() {
+      if (!synth) return "missing";
+      if (pickVoice("km")) return "voice";
+      return kmStatus === "missing" ? "missing" : "trying";
+    },
   };
 })();

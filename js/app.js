@@ -221,6 +221,18 @@
     el.onclick = () => { Sound.click(); openPet(); };
   }
 
+  // Help text under the "Read aloud" toggle. Only shown when it can actually
+  // help: speech unsupported, or Khmer is selected and its voice is missing.
+  function speechNote() {
+    if (!Speech.supported()) return `<p class="field-note">${t("settings.speechNA")}</p>`;
+    if (I18N.getLang() !== "km" || Speech.kmState() !== "missing") return "";
+    const ua = navigator.userAgent || "";
+    let how = t("settings.speechKmDesktop");
+    if (/Android/i.test(ua)) how = t("settings.speechKmAndroid");
+    else if (/iPhone|iPad|iPod|Macintosh/i.test(ua)) how = t("settings.speechKmIos");
+    return `<p class="field-note">${t("settings.speechNA")}<br>${how}</p>`;
+  }
+
   $("#menu-settings").onclick = openSettings;
   function openSettings() {
     const p = Store.getActive();
@@ -252,8 +264,7 @@
           <button id="spk-on" class="${Store.speechOn() ? "sel" : ""}">${t("settings.speechOn")}</button>
           <button id="spk-off" class="${!Store.speechOn() ? "sel" : ""}">${t("settings.speechOff")}</button>
         </div>
-        ${(!Speech.supported() || (I18N.getLang() === "km" && !Speech.available("km")))
-          ? `<p class="field-note">${t("settings.speechNA")}</p>` : ""}
+        ${speechNote()}
       </div>
       <div class="modal-actions">
         <button class="btn btn-soft" id="s-close">${t("common.close")}</button>

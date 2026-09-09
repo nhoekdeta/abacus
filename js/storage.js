@@ -110,6 +110,18 @@ window.Store = (function () {
       save();
     },
 
+    getHomework() {
+      const p = this.getActive();
+      return (p && p.homework) || null;
+    },
+
+    saveHomework(items) {
+      const p = this.getActive();
+      if (!p) return;
+      p.homework = { items: items || [], saved: Date.now() };
+      save();
+    },
+
     isLessonDone(id) {
       const p = this.getActive();
       return !!(p && p.lessonsDone && p.lessonsDone[id]);

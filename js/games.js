@@ -405,7 +405,8 @@ window.Games = (function () {
       } else {
         const dots = Array.from({ length: this.total }, (_, i) =>
           `<i class="${i < this.round - 1 ? "done" : i === this.round - 1 ? "now" : ""}"></i>`).join("");
-        meta = `<span class="dots">${dots}</span><span class="lvl">${t("play.level", { n: this.level })}</span>`;
+        const lvl = this.def._hideLevel ? "" : `<span class="lvl">${t("play.level", { n: this.level })}</span>`;
+        meta = `<span class="dots">${dots}</span>${lvl}`;
       }
       const combo = (this.def.combo && this.combo >= 2) ? `<span class="combo">🔥 x${this.combo}</span>` : "";
       e.prompt.hidden = false;

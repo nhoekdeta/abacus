@@ -651,6 +651,8 @@
 
     const p = Store.getActive();
     const all = correct === total;
+    const isHw = typeId === "_homework";
+    const againLabel = isHw ? t("common.close") : t("ws.newSheet");
     const body = `
       <div class="summary-buddy">${p ? p.avatar : "🎉"}</div>
       <h3>${all ? t("ws.allRight") : t("sum.nice")}</h3>
@@ -659,19 +661,123 @@
       <p class="tagline">${t("sum.total", { n: p ? p.stars : stars })}</p>
       <div class="modal-actions">
         <button class="btn btn-soft" id="ws-menu">${t("sum.menu")}</button>
-        <button class="btn btn-primary" id="ws-again">${t("ws.newSheet")}</button>
+        <button class="btn btn-primary" id="ws-again">${againLabel}</button>
       </div>`;
     openModal(body);
     if (all) burstConfetti();
     $("#ws-menu").onclick = () => { closeModal(); openMenu(); };
-    $("#ws-again").onclick = () => { closeModal(); startWorksheet(typeId, opts); };
+    $("#ws-again").onclick = () => {
+      closeModal();
+      if (isHw) openMenu();
+      else startWorksheet(typeId, opts);
+    };
   }
 
-  function openHomeworkBuilder() {
-    // stage 2
-    openModal(`<h3>${t("ws.homeworkTitle")}</h3><p class="tagline">${t("ws.comingSoon")}</p>
-      <div class="modal-actions"><button class="btn btn-primary" id="hw-ok">${t("common.close")}</button></div>`);
-    $("#hw-ok").onclick = closeModal;
+  function openHomeworkBuilder(preset) {
+    const saved = Store.getHomework();
+    let items = preset || (saved ? saved.items.slice() : []);
+    let mode = sessionStore("ws.lastMode") || "sheet";
+    let err = "";
+
+    function problems() {
+      return items.map(Worksheets.problemFromInput).filter(Boolean);
+    }
+    function body() {
+      const list = items.length
+        ? `<ul class="hw-list">` + items.map((raw, i) => {
+            const p = Worksheets.problemFromInput(raw);
+            const label = p ? p.html : `<span class="ws-expr" style="color:var(--bad)">?</span>`;
+            return `<li><span class="hw-body">${label}</span>
+              <button class="hw-del" data-del="${i}" aria-label="${t("common.cancel")}">✕</button></li>`;
+          }).join("") + `</ul>`
+        : `<p class="tagline">${t("ws.homeworkHint")}</p>`;
+      return `
+        <h3>📝 ${t("ws.homeworkTitle")}</h3>
+        ${list}
+        <div class="field">
+          <input type="text" id="hw-in" inputmode="text" placeholder="${t("ws.homeworkPlaceholder")}" />
+          ${err ? `<p class="field-note" style="color:var(--bad)">${err}</p>` : ""}
+        </div>
+        <div class="modal-actions">
+          <button class="btn btn-soft" id="hw-add">${t("ws.homeworkAdd")}</button>
+        </div>
+        ${items.length ? `
+          <div class="field">
+            <label>${t("ws.mode")}</label>
+            <div class="pick-row" id="hw-modes">
+              <button data-mode="sheet" class="${mode === "sheet" ? "sel" : ""}">${t("ws.modeSheet")}</button>
+              <button data-mode="oneup" class="${mode === "oneup" ? "sel" : ""}">${t("ws.modeOneUp")}</button>
+            </div>
+          </div>` : ""}
+        <div class="modal-actions">
+          <button class="btn btn-soft" id="hw-cancel">${t("common.close")}</button>
+          <button class="btn btn-primary" id="hw-start" ${items.length ? "" : "disabled"}>${t("ws.start")}</button>
+        </div>`;
+    }
+    function tryAdd() {
+      const raw = ($("#hw-in").value || "").trim();
+      if (!raw) return;
+      const parsed = Worksheets.parseTyped(raw);
+      const p = parsed && Worksheets.problemFromInput(parsed);
+      if (!p) { err = t("ws.homeworkBad"); refresh(); return; }
+      items.push(parsed);
+      err = "";
+      Store.saveHomework(items);
+      refresh();
+      setTimeout(() => { const el = $("#hw-in"); if (el) el.focus(); }, 30);
+    }
+    function refresh() { $("#modal-body").innerHTML = body(); wire(); }
+    function wire() {
+      $("#hw-add").onclick = tryAdd;
+      const input = $("#hw-in");
+      if (input) input.onkeydown = (e) => { if (e.key === "Enter") { e.preventDefault(); tryAdd(); } };
+      $$("[data-del]").forEach(b => b.onclick = () => { items.splice(+b.dataset.del, 1); Store.saveHomework(items); refresh(); });
+      const modes = $("#hw-modes");
+      if (modes) modes.onclick = (e) => { const b = e.target.closest("button"); if (!b) return; mode = b.dataset.mode; sessionStore("ws.lastMode", mode); refresh(); };
+      $("#hw-cancel").onclick = closeModal;
+      const start = $("#hw-start");
+      if (start) start.onclick = () => {
+        const probs = problems();
+        if (!probs.length) return;
+        closeModal();
+        startHomework(probs, mode);
+      };
+    }
+    openModal(body());
+    wire();
+    setTimeout(() => { const el = $("#hw-in"); if (el) el.focus(); }, 50);
+  }
+
+  function startHomework(probs, mode) {
+    resetPlayScreen();
+    const p = Store.getActive();
+    $("#play-title").textContent = t("ws.homeworkTitle");
+    playEls.score.textContent = "0/" + probs.length;
+
+    if (mode === "oneup") {
+      const buddy = p ? p.avatar : "🐢";
+      mascotFace.textContent = buddy;
+      mascotEl.hidden = false;
+      mascotEl.className = "mascot";
+      playEls.buddy = buddy;
+      const def = Worksheets.gameDefFromList(probs, t("ws.homeworkTitle"));
+      session = new Games.Session(def, playEls, {
+        age: p ? p.age : "6-8", level: 1,
+        onDone: (res) => finishWorksheet("_homework", { count: probs.length }, res),
+      });
+      Music.play("game");
+      show("play");
+      session.start();
+      return;
+    }
+
+    worksheet = new Worksheets.Session(playEls, {
+      typeId: "_homework", problems: probs,
+      onDone: (score) => finishWorksheet("_homework", { count: probs.length }, score),
+    });
+    Music.play("game");
+    show("play");
+    worksheet.start();
   }
 
   /* ===================== nav buttons ===================== */

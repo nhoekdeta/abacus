@@ -840,3 +840,16 @@ html[lang="km"] .prompt,html[lang="km"] .lesson-say{line-height:1.75}
   .ws-item{min-height:108px;padding:10px 6px 8px}
   .ws-col{font-size:1.05rem}
 }
+
+/* ---- homework builder ---- */
+.hw-list{list-style:none;display:flex;flex-direction:column;gap:6px;margin:6px 0 12px;max-height:44vh;overflow-y:auto}
+.hw-list li{
+  display:flex;align-items:center;gap:10px;background:#2c4372;border-radius:12px;padding:8px 10px;
+}
+.hw-body{flex:1;font-weight:800;color:var(--ink);font-variant-numeric:tabular-nums}
+.hw-body .ws-col{flex-direction:row;gap:4px;font-size:1rem}
+.hw-body .ws-expr{font-size:1.15rem}
+.hw-del{border:none;background:#3a568c;color:var(--ink);width:30px;height:30px;border-radius:8px;font-weight:900;flex:0 0 auto}
+.hw-del:active{transform:scale(.9)}
+#hw-in{width:100%;padding:12px;border-radius:12px;border:2px solid #3a568c;background:#22345a;color:var(--ink);font-size:1.05rem}
+#hw-in:focus{outline:none;border-color:var(--accent)}

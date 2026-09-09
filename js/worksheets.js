@@ -74,8 +74,9 @@ window.Worksheets = (function () {
     }).join("") + `</span>`;
   }
 
+  // Symbols only — speech.js says them in the current language.
   function stringSpeak(terms) {
-    return terms.map((v, i) => (v < 0 ? " ដក " : (i === 0 ? "" : " បូក ")) + Math.abs(v)).join(" ");
+    return terms.map((v, i) => (v < 0 ? " − " : (i === 0 ? "" : " + ")) + Math.abs(v)).join("");
   }
 
   /* ---- the worksheet types ---- */
@@ -125,7 +126,7 @@ window.Worksheets = (function () {
         else { a = R(101, 999); b = R(2, 9); }
         return {
           html: `<span class="ws-expr">${a} × ${b}</span>`,
-          speak: `${a} គុណ ${b}`,
+          speak: `${a} × ${b}`,
           answer: a * b,
           layout: "row",
         };
@@ -143,7 +144,7 @@ window.Worksheets = (function () {
         else { b = R(11, 25); q = R(11, 40); }
         return {
           html: `<span class="ws-expr">${b * q} ÷ ${b}</span>`,
-          speak: `${b * q} ចែក ${b}`,
+          speak: `${b * q} ÷ ${b}`,
           answer: q,
           layout: "row",
         };
@@ -152,6 +153,44 @@ window.Worksheets = (function () {
   ];
   const byId = {};
   TYPES.forEach((t) => (byId[t.id] = t));
+
+  /* ---- turn a typed-in homework problem into the same shape a generator
+     returns. `raw` is either:
+       { op: "string", terms: [4, -3, 5] }
+       { op: "×"|"÷", a: 12, b: 4 }
+     Returns null if it doesn't make sense (e.g. non-exact division). */
+  function problemFromInput(raw) {
+    if (!raw) return null;
+    if (raw.op === "string") {
+      const terms = (raw.terms || []).filter((n) => Number.isFinite(n));
+      if (terms.length < 2) return null;
+      const answer = terms.reduce((a, b) => a + b, 0);
+      if (answer < 0) return null;
+      return { html: stringHtml(terms), speak: stringSpeak(terms), answer, layout: "column" };
+    }
+    const a = Number(raw.a), b = Number(raw.b);
+    if (!Number.isFinite(a) || !Number.isFinite(b)) return null;
+    if (raw.op === "×") {
+      return { html: `<span class="ws-expr">${a} × ${b}</span>`, speak: `${a} × ${b}`, answer: a * b, layout: "row" };
+    }
+    if (raw.op === "÷") {
+      if (b === 0 || a % b !== 0) return null;
+      return { html: `<span class="ws-expr">${a} ÷ ${b}</span>`, speak: `${a} ÷ ${b}`, answer: a / b, layout: "row" };
+    }
+    return null;
+  }
+
+  // Parse a free-typed string like "4 +3 -2 +5" / "4,3,-2,5" / "12 x 4" / "36/6".
+  function parseTyped(text) {
+    const s = String(text).trim().replace(/[×xX*]/g, "×").replace(/[÷/]/g, "÷");
+    let m = s.match(/^(-?\d+)\s*([×÷])\s*(-?\d+)$/);
+    if (m) return { op: m[2], a: +m[1], b: +m[3] };
+    const parts = s.match(/[+-]?\s*\d+/g);
+    if (!parts) return null;
+    const terms = parts.map((p) => +p.replace(/\s+/g, ""));
+    if (terms.length < 2) return null;
+    return { op: "string", terms };
+  }
 
   function buildSheet(typeId, level, count) {
     const type = byId[typeId];
@@ -178,7 +217,11 @@ window.Worksheets = (function () {
       this.count = opts.count || 10;
       this.onDone = opts.onDone || function () {};
       this.onExit = opts.onExit || function () {};
-      this.problems = buildSheet(this.typeId, this.level, this.count);
+      this.title = opts.title || null;
+      this.problems = opts.problems && opts.problems.length
+        ? opts.problems
+        : buildSheet(this.typeId, this.level, this.count);
+      this.count = this.problems.length;
       this.answers = this.problems.map(() => "");
       this.active = 0;
       this.checked = false;
@@ -201,7 +244,7 @@ window.Worksheets = (function () {
       e.btnCheck.hidden = false;
       e.btnCheck.textContent = t("ws.checkPage");
       e.btnNext.hidden = true;
-      e.btnNext.textContent = t("ws.newSheet");
+      e.btnNext.textContent = this.typeId === "_homework" ? t("play.finish") : t("ws.newSheet");
       e.btnCheck.onclick = () => this._check();
       e.btnNext.onclick = () => this.onDone(this._score());
 
@@ -213,6 +256,7 @@ window.Worksheets = (function () {
 
     _render() {
       const type = byId[this.typeId];
+      const wide = type ? type.age === "9-12" : this.problems.some((p) => p.layout === "row");
       const grid = this.problems.map((p, i) => {
         const val = this.answers[i];
         let state = "";
@@ -235,7 +279,7 @@ window.Worksheets = (function () {
           <button data-k="back">⌫</button><button data-k="0">0</button><button data-k="clr">C</button>
         </div>`;
 
-      this.els.controls.innerHTML = `<div class="ws-grid ${type.age === "9-12" ? "ws-grid-wide" : ""}">${grid}</div>${keypad}`;
+      this.els.controls.innerHTML = `<div class="ws-grid ${wide ? "ws-grid-wide" : ""}">${grid}</div>${keypad}`;
 
       this.els.controls.querySelectorAll(".ws-item").forEach((btn) =>
         btn.onclick = () => { this.active = +btn.dataset.i; this._render(); this._speakActive(); });
@@ -328,11 +372,35 @@ window.Worksheets = (function () {
     };
   }
 
+  /* one-at-a-time runner for a fixed list of problems (homework) */
+  function gameDefFromList(problems, title) {
+    let i = -1;
+    return {
+      id: "ws_hw",
+      title: title || t("ws.homeworkTitle"),
+      emoji: "📝",
+      age: "6-8",
+      rounds: problems.length,
+      blurb: "",
+      _fixedLevel: true,
+      _hideLevel: true,
+      abacus: { columns: 3, showPlaces: true, compact: true },
+      makeRound() {
+        i = Math.min(i + 1, problems.length - 1);
+        const p = problems[i];
+        return { prompt: `<span class="big ws-oneup">${p.html}</span>`, say: p.speak, input: "keypad", target: p.answer };
+      },
+    };
+  }
+
   return {
     TYPES,
     get: (id) => byId[id],
     buildSheet,
     Session: WorksheetSession,
     gameDef,
+    gameDefFromList,
+    problemFromInput,
+    parseTyped,
   };
 })();

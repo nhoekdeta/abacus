@@ -156,7 +156,10 @@ window.I18N = (function () {
       "ws.pageScore": "You got <b>{c} of {t}</b> right.",
       "ws.homeworkTitle": "My Homework",
       "ws.homeworkBlurb": "Type in your own problems",
-      "ws.comingSoon": "Coming soon — type in the problems from your homework and check them here.",
+      "ws.homeworkHint": "Add the problems from your homework, one by one.",
+      "ws.homeworkPlaceholder": "e.g.  4 +3 -2 +5   or   12 × 4",
+      "ws.homeworkAdd": "＋ Add problem",
+      "ws.homeworkBad": "Couldn't read that. Try like  4 +3 -2  or  12 × 4  or  36 ÷ 6",
 
       "pet.title": "My Buddy",
       "pet.feed": "Feed",
@@ -390,7 +393,10 @@ window.I18N = (function () {
       "ws.pageScore": "អ្នកឆ្លើយត្រូវ <b>{c} ក្នុងចំណោម {t}</b>។",
       "ws.homeworkTitle": "កិច្ចការផ្ទះរបស់ខ្ញុំ",
       "ws.homeworkBlurb": "វាយបញ្ចូលលំហាត់ផ្ទាល់ខ្លួន",
-      "ws.comingSoon": "នឹងមកដល់ឆាប់ៗ — វាយបញ្ចូលលំហាត់ពីកិច្ចការផ្ទះ រួចពិនិត្យនៅទីនេះ។",
+      "ws.homeworkHint": "បន្ថែមលំហាត់ពីកិច្ចការផ្ទះ ម្តងមួយៗ។",
+      "ws.homeworkPlaceholder": "ឧ.  4 +3 -2 +5   ឬ   12 × 4",
+      "ws.homeworkAdd": "＋ បន្ថែមលំហាត់",
+      "ws.homeworkBad": "អានមិនបាន។ សាកបែប  4 +3 -2  ឬ  12 × 4  ឬ  36 ÷ 6",
 
       "pet.title": "មិត្តរបស់ខ្ញុំ",
       "pet.feed": "ចម្អែត",

@@ -624,7 +624,7 @@ window.Games = (function () {
 
     _miss(msg) {
       this.firstTry = false;
-      if (!this.leveledThisRound) {
+      if (!this.leveledThisRound && !this.def._fixedLevel) {
         this.badStreak++;
         this.goodStreak = 0;
         if (this.badStreak >= 2 && this.level > 1) {
@@ -646,7 +646,7 @@ window.Games = (function () {
       this.firstTry = false;
       this.badStreak++;
       this.goodStreak = 0;
-      if (this.badStreak >= 2 && this.level > 1 && !this.leveledThisRound) {
+      if (this.badStreak >= 2 && this.level > 1 && !this.leveledThisRound && !this.def._fixedLevel) {
         this.level--; this.leveledThisRound = true; this.badStreak = 0; this._levelToast(false);
       }
     }
@@ -666,7 +666,7 @@ window.Games = (function () {
       Sound.star();
       this._react("happy");
 
-      if (this.firstTry && !this.leveledThisRound) {
+      if (this.firstTry && !this.leveledThisRound && !this.def._fixedLevel) {
         this.goodStreak++;
         if (this.goodStreak >= 2 && this.level < MAX_LEVEL) {
           this.level++; this.goodStreak = 0; this.leveledThisRound = true;

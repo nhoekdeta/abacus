@@ -785,3 +785,58 @@ html[lang="km"] .prompt,html[lang="km"] .lesson-say{line-height:1.75}
   .seq{font-size:1.5rem}
   .lesson-say{font-size:1.15rem}
 }
+
+/* ============================================================
+   WORKSHEETS
+   ============================================================ */
+.tile-worksheet{background:linear-gradient(180deg,#e6f0ff,#bcd3f3);min-height:118px}
+.tile-worksheet .tile-label{font-size:1.05rem}
+.tile-homework{background:linear-gradient(180deg,#fff2cc,#ffe08a)}
+
+.ws-instruction{
+  background:var(--panel);border-radius:14px;padding:10px 44px 10px 16px;position:relative;
+  font-size:1rem;font-weight:700;text-align:center;line-height:1.35;
+}
+
+.ws-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-bottom:14px}
+.ws-grid-wide{grid-template-columns:repeat(auto-fill,minmax(170px,1fr))}
+.ws-item{
+  border:2px solid transparent;border-radius:16px;padding:12px 10px 10px;
+  background:linear-gradient(180deg,#fff,#eaf0fb);color:#22314f;box-shadow:0 4px 0 rgba(0,0,0,.16);
+  display:flex;flex-direction:column;align-items:center;gap:4px;position:relative;min-height:120px;
+  justify-content:center;text-align:center;
+}
+.ws-item:active{transform:translateY(2px);box-shadow:0 2px 0 rgba(0,0,0,.16)}
+.ws-item .ws-num{position:absolute;top:6px;left:9px;font-size:.72rem;font-weight:800;color:#8194b5}
+.ws-item.is-active{border-color:var(--accent);background:linear-gradient(180deg,#fff,#e2ecfe);box-shadow:0 4px 0 var(--accent)}
+.ws-item.is-right{background:linear-gradient(180deg,#c9f6d6,#8fe6a8);box-shadow:0 4px 0 #2ba85a}
+.ws-item.is-wrong{background:linear-gradient(180deg,#ffd4d4,#ffa6a6);box-shadow:0 4px 0 #d64545}
+.ws-item[disabled]{opacity:1}
+
+.ws-col{display:flex;flex-direction:column;line-height:1.15;font-weight:800;font-size:1.15rem;font-variant-numeric:tabular-nums}
+.ws-term{display:block}
+.ws-expr{font-size:1.5rem;font-weight:900;letter-spacing:1px}
+.ws-body{margin:2px 0}
+.ws-eq{font-weight:900;color:#5b6b8c}
+.ws-ans{min-width:2ch;font-size:1.5rem;font-weight:900;color:var(--accent);border-bottom:3px solid #b9c9e6;padding:0 6px}
+.ws-item.is-right .ws-ans,.ws-item.is-wrong .ws-ans{color:#22314f;border-bottom-color:rgba(34,49,79,.35)}
+.ws-sol{font-size:.9rem;font-weight:800;color:#22314f;background:rgba(255,255,255,.55);border-radius:8px;padding:1px 7px}
+
+.ws-keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;max-width:280px;margin:0 auto}
+.ws-keypad button{
+  border:none;border-radius:14px;padding:12px;font-size:1.4rem;font-weight:900;
+  background:linear-gradient(180deg,#fff,#e7edfb);color:#22314f;box-shadow:0 4px 0 rgba(0,0,0,.2);
+}
+.ws-keypad button:active{transform:translateY(3px);box-shadow:0 1px 0 rgba(0,0,0,.2)}
+
+.pick-row.ws-levels button{font-size:1.05rem;font-weight:800;min-width:2.4em;padding:9px 0;text-align:center;flex:1 0 2.4em}
+
+.prompt .ws-oneup{display:inline-block}
+.prompt .ws-oneup .ws-col{font-size:2rem;color:var(--accent)}
+.prompt .ws-oneup .ws-expr{font-size:2.4rem}
+
+@media (max-width:420px){
+  .ws-grid{grid-template-columns:repeat(2,1fr);gap:8px}
+  .ws-item{min-height:108px;padding:10px 6px 8px}
+  .ws-col{font-size:1.05rem}
+}

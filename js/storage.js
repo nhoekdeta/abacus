@@ -51,6 +51,7 @@ window.Store = (function () {
         best: {},        // gameId -> best score
         plays: {},       // gameId -> times played
         levels: {},      // gameId -> current adaptive level (1..MAX)
+        worksheets: {},  // typeId -> { done, best } (best = highest correct count)
         lessonsDone: {},
         pet: null,       // { hunger, happiness, treats, fedTotal, accessories, wearing, lastSeen }
         created: Date.now(),
@@ -89,6 +90,23 @@ window.Store = (function () {
       p.plays = p.plays || {};
       p.plays[gameId] = (p.plays[gameId] || 0) + 1;
       if (score != null && score > (p.best[gameId] || 0)) p.best[gameId] = score;
+      save();
+    },
+
+    worksheetStat(typeId) {
+      const p = this.getActive();
+      const w = (p && p.worksheets && p.worksheets[typeId]) || {};
+      return { done: w.done || 0, best: w.best || 0 };
+    },
+
+    recordWorksheet(typeId, { correct, total }) {
+      const p = this.getActive();
+      if (!p) return;
+      p.worksheets = p.worksheets || {};
+      const w = p.worksheets[typeId] || { done: 0, best: 0 };
+      w.done += 1;
+      if (correct != null && correct > w.best) w.best = correct;
+      p.worksheets[typeId] = w;
       save();
     },
 

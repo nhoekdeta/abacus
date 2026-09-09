@@ -24,6 +24,7 @@
   let lesson = null;       // active LessonSession
   let petScreen = null;    // active PetScreen
   let freeAbacus = null;   // free-play Abacus
+  let worksheet = null;    // active WorksheetSession
 
   function show(name) {
     Object.values(screens).forEach(s => s.classList.remove("is-active"));
@@ -173,6 +174,34 @@
       btn.onclick = () => startLesson(les.id);
       lgrid.appendChild(btn);
     });
+
+    // worksheets
+    const wgrid = $("#worksheet-grid");
+    wgrid.innerHTML = "";
+    Worksheets.TYPES.forEach((type, i) => {
+      const btn = document.createElement("button");
+      btn.className = "tile tile-worksheet";
+      btn.dataset.age = type.age;
+      btn.style.setProperty("--i", i);
+      const rec = Store.worksheetStat(type.id);
+      const badge = rec.done ? `<span class="tile-level">✓ ${rec.done}</span>` : "";
+      btn.innerHTML =
+        badge +
+        `<span class="tile-emoji">${type.icon}</span>` +
+        `<span class="tile-label">${t("wsType." + type.id + ".title")}</span>` +
+        `<span class="tile-sub">${t("wsType." + type.id + ".blurb")}</span>`;
+      btn.onclick = () => openWorksheetSetup(type.id);
+      wgrid.appendChild(btn);
+    });
+    const hw = document.createElement("button");
+    hw.className = "tile tile-worksheet tile-homework";
+    hw.style.setProperty("--i", Worksheets.TYPES.length);
+    hw.innerHTML =
+      `<span class="tile-emoji">📝</span>` +
+      `<span class="tile-label">${t("ws.homeworkTitle")}</span>` +
+      `<span class="tile-sub">${t("ws.homeworkBlurb")}</span>`;
+    hw.onclick = () => openHomeworkBuilder();
+    wgrid.appendChild(hw);
 
     // games
     const grid = $("#game-grid");
@@ -363,6 +392,7 @@
     Speech.stop();
     if (session) { session.destroy(); session = null; }
     if (lesson) { lesson.destroy(); lesson = null; }
+    if (worksheet) { worksheet.destroy(); worksheet = null; }
     closePet();
     freeAbacus = null;
     playEls.abacusMount.innerHTML = "";
@@ -506,6 +536,142 @@
     burstConfetti();
     $("#sum-menu").onclick = () => { closeModal(); openMenu(); };
     $("#sum-again").onclick = () => { closeModal(); startGame(def.id); };
+  }
+
+  /* ==================== worksheets ==================== */
+  const WS_LEVEL_KEY = "ws.lastLevel";
+  function openWorksheetSetup(typeId) {
+    const type = Worksheets.get(typeId);
+    if (!type) return;
+    let level = clampNum(+(sessionStore(WS_LEVEL_KEY + typeId) || defaultWsLevel(type)), 1, 10);
+    let count = 10;
+    let mode = sessionStore("ws.lastMode") || "sheet";
+
+    function body() {
+      const lvlBtns = Array.from({ length: 10 }, (_, i) =>
+        `<button data-lvl="${i + 1}" class="${i + 1 === level ? "sel" : ""}">${i + 1}</button>`).join("");
+      const cntBtns = [10, 15, 20].map(n =>
+        `<button data-cnt="${n}" class="${n === count ? "sel" : ""}">${n}</button>`).join("");
+      return `
+        <h3>${type.icon} ${t("wsType." + typeId + ".title")}</h3>
+        <div class="field">
+          <label>${t("ws.level")}</label>
+          <div class="pick-row ws-levels" id="ws-lvls">${lvlBtns}</div>
+        </div>
+        <div class="field">
+          <label>${t("ws.howMany")}</label>
+          <div class="pick-row" id="ws-cnts">${cntBtns}</div>
+        </div>
+        <div class="field">
+          <label>${t("ws.mode")}</label>
+          <div class="pick-row" id="ws-modes">
+            <button data-mode="sheet" class="${mode === "sheet" ? "sel" : ""}">${t("ws.modeSheet")}</button>
+            <button data-mode="oneup" class="${mode === "oneup" ? "sel" : ""}">${t("ws.modeOneUp")}</button>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button class="btn btn-soft" id="ws-cancel">${t("common.cancel")}</button>
+          <button class="btn btn-primary" id="ws-start">${t("ws.start")}</button>
+        </div>`;
+    }
+    function wire() {
+      $("#ws-lvls").onclick = (e) => { const b = e.target.closest("button"); if (!b) return; level = +b.dataset.lvl; refresh(); };
+      $("#ws-cnts").onclick = (e) => { const b = e.target.closest("button"); if (!b) return; count = +b.dataset.cnt; refresh(); };
+      $("#ws-modes").onclick = (e) => { const b = e.target.closest("button"); if (!b) return; mode = b.dataset.mode; refresh(); };
+      $("#ws-cancel").onclick = closeModal;
+      $("#ws-start").onclick = () => {
+        sessionStore(WS_LEVEL_KEY + typeId, level);
+        sessionStore("ws.lastMode", mode);
+        closeModal();
+        startWorksheet(typeId, { level, count, mode });
+      };
+    }
+    function refresh() { $("#modal-body").innerHTML = body(); wire(); }
+    openModal(body());
+    wire();
+  }
+
+  function defaultWsLevel(type) {
+    const p = Store.getActive();
+    if (!p) return 1;
+    if (type.age === "9-12") return p.age === "9-12" ? 3 : 1;
+    return p.age === "9-12" ? 5 : p.age === "6-8" ? 2 : 1;
+  }
+  function clampNum(n, lo, hi) { return Math.max(lo, Math.min(hi, n | 0)); }
+  function sessionStore(k, v) {
+    try {
+      if (v === undefined) return sessionStorage.getItem("bb." + k);
+      sessionStorage.setItem("bb." + k, v);
+    } catch (e) { return null; }
+  }
+
+  function startWorksheet(typeId, opts) {
+    resetPlayScreen();
+    const p = Store.getActive();
+    const type = Worksheets.get(typeId);
+    $("#play-title").textContent = t("wsType." + typeId + ".title");
+    playEls.score.textContent = "0/" + opts.count;
+
+    if (opts.mode === "oneup") {
+      const buddy = p ? p.avatar : "🐢";
+      mascotFace.textContent = buddy;
+      mascotEl.hidden = false;
+      mascotEl.className = "mascot";
+      playEls.buddy = buddy;
+      const def = Worksheets.gameDef(typeId, opts.level, opts.count);
+      session = new Games.Session(def, playEls, {
+        age: p ? p.age : "6-8",
+        level: opts.level,
+        onDone: (res) => finishWorksheet(typeId, opts, res),
+      });
+      Music.play("game");
+      show("play");
+      session.start();
+      return;
+    }
+
+    worksheet = new Worksheets.Session(playEls, {
+      typeId, level: opts.level, count: opts.count,
+      onDone: (score) => finishWorksheet(typeId, opts, score),
+    });
+    Music.play("game");
+    show("play");
+    worksheet.start();
+  }
+
+  function finishWorksheet(typeId, opts, res) {
+    if (session) { session.destroy(); session = null; }
+    if (worksheet) { worksheet.destroy(); worksheet = null; }
+    mascotEl.hidden = true;
+    const total = res.total || opts.count;
+    const correct = res.correct || 0;
+    const stars = res.stars != null ? res.stars : Math.round(correct * 1.5) + (correct === total ? 3 : 0);
+    Store.addStars(stars);
+    Store.recordWorksheet(typeId, { correct, total });
+
+    const p = Store.getActive();
+    const all = correct === total;
+    const body = `
+      <div class="summary-buddy">${p ? p.avatar : "🎉"}</div>
+      <h3>${all ? t("ws.allRight") : t("sum.nice")}</h3>
+      <div class="summary-stars"><span>＋${stars}</span> ⭐</div>
+      <p>${t("ws.pageScore", { c: correct, t: total })}</p>
+      <p class="tagline">${t("sum.total", { n: p ? p.stars : stars })}</p>
+      <div class="modal-actions">
+        <button class="btn btn-soft" id="ws-menu">${t("sum.menu")}</button>
+        <button class="btn btn-primary" id="ws-again">${t("ws.newSheet")}</button>
+      </div>`;
+    openModal(body);
+    if (all) burstConfetti();
+    $("#ws-menu").onclick = () => { closeModal(); openMenu(); };
+    $("#ws-again").onclick = () => { closeModal(); startWorksheet(typeId, opts); };
+  }
+
+  function openHomeworkBuilder() {
+    // stage 2
+    openModal(`<h3>${t("ws.homeworkTitle")}</h3><p class="tagline">${t("ws.comingSoon")}</p>
+      <div class="modal-actions"><button class="btn btn-primary" id="hw-ok">${t("common.close")}</button></div>`);
+    $("#hw-ok").onclick = closeModal;
   }
 
   /* ===================== nav buttons ===================== */

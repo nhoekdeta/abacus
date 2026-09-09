@@ -194,10 +194,10 @@ window.Pet = (function () {
       this.mount.querySelector("[data-back]").onclick = () => { Sound.click(); Speech.stop(); this.view = "home"; this.render(); };
       this.mount.querySelectorAll(".pet-choice").forEach(btn =>
         btn.onclick = () => this._answer(+btn.dataset.i, btn, kind));
-      const line = heading + ". " + q.q;
+      const lines = [heading, q.q];
       const sb = this.mount.querySelector(".say-btn");
-      if (sb) sb.onclick = () => { pulse(sb, "ring"); Speech.speakHtml(line, I18N.getLang()); };
-      if (window.Speech) Speech.speakHtml(line, I18N.getLang());
+      if (sb) sb.onclick = () => { pulse(sb, "ring"); Speech.speakSeq(lines, I18N.getLang()); };
+      if (window.Speech) Speech.speakSeq(lines, I18N.getLang());
     }
 
     _answer(i, btn, kind) {

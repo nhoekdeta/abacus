@@ -1,16 +1,13 @@
-/* Read-aloud narration for pre-readers. Uses the browser's built-in
-   speechSynthesis (no audio files).
+/* Read-aloud narration for pre-readers.
 
-   English TTS is on essentially every device. Khmer TTS is not always
-   installed: it ships on most Android tablets (Google TTS), on iOS/iPadOS
-   after the "Khmer" voice is downloaded in Settings, and on ChromeOS, but
-   is usually absent on Windows/desktop Chrome. So for Khmer we:
-     1. use a real Khmer voice if one is enumerated;
-     2. otherwise still attempt with lang "km-KH" — Android / iOS / ChromeOS
-        resolve by language even when getVoices() is incomplete;
-     3. if that first attempt reports the language is unavailable, go quiet
-        for Khmer and let the Settings screen explain how to add the voice. */
+   English uses the browser's built-in speechSynthesis (on essentially every
+   device). Khmer prefers the recorded clip library in khmer-audio.js — that
+   works on every device, offline — and only falls back to speechSynthesis
+   when a phrase isn't covered by clips. Where neither works (desktop with no
+   Khmer voice), Khmer narration is silent and Settings explains why. */
 window.Speech = (function () {
+
+  const KA = () => (window.KhmerAudio && window.KhmerAudio.isReady() ? window.KhmerAudio : null);
 
   const synth = ("speechSynthesis" in window) ? window.speechSynthesis : null;
   let enabled = true;
@@ -69,20 +66,29 @@ window.Speech = (function () {
   }
 
   function say(text, lang, fromHtml) {
-    if (!enabled || !synth) return;
+    if (!enabled) return;
     lang = lang || (window.I18N ? I18N.getLang() : "en");
-
-    const v = pickVoice(lang);
     const isKm = lang === "km";
-
-    // Khmer with no voice, and a previous attempt already told us it's not
-    // supported here — stay silent rather than mangle it with an English voice.
-    if (isKm && !v && kmStatus === "missing") return;
 
     const words = fromHtml ? toText(text, lang) : String(text).replace(EMOJI, "").trim();
     if (!words) return;
 
+    // Khmer: recorded clips first (works everywhere, offline).
+    if (isKm && KA()) {
+      if (synth) { try { synth.cancel(); } catch (e) {} }
+      if (KA().speak(words)) return;
+      if (typeof console !== "undefined") console.warn("[KhmerAudio] no clips for:", words);
+    }
+
+    if (!synth) return;
+    const v = pickVoice(lang);
+
+    // Khmer with no voice and a previous attempt already proved it's silent
+    // here — don't mangle it with an English voice.
+    if (isKm && !v && kmStatus === "missing") return;
+
     try {
+      if (KA()) KA().stop();
       synth.cancel();
       const u = new SpeechSynthesisUtterance(words);
       if (v) {
@@ -125,16 +131,47 @@ window.Speech = (function () {
   return {
     speak: (t, lang) => say(t, lang, false),
     speakHtml: (html, lang) => say(html, lang, true),
-    stop() { try { synth && synth.cancel(); } catch (e) {} },
+    /* Speak several HTML fragments in order (e.g. a lesson step + its finger
+       hint) without the second one cutting off the first. */
+    speakSeq(parts, lang) {
+      if (!enabled) return;
+      lang = lang || (window.I18N ? I18N.getLang() : "en");
+      const items = parts.map((p) => toText(p, lang)).filter(Boolean);
+      if (!items.length) return;
+      if (lang === "km" && KA()) {
+        if (synth) { try { synth.cancel(); } catch (e) {} }
+        if (KA().speakSeq(items)) return;
+      }
+      if (!synth) return;
+      const v = pickVoice(lang);
+      if (lang === "km" && !v && kmStatus === "missing") return;
+      try {
+        if (KA()) KA().stop();
+        synth.cancel();
+        for (const it of items) {
+          const u = new SpeechSynthesisUtterance(it);
+          if (v) { u.voice = v; u.lang = v.lang; } else { u.lang = lang === "km" ? "km-KH" : "en-US"; }
+          u.rate = 0.9; u.pitch = 1.05;
+          synth.speak(u);
+        }
+      } catch (e) {}
+    },
+    stop() {
+      try { synth && synth.cancel(); } catch (e) {}
+      try { if (KA()) KA().stop(); } catch (e) {}
+    },
     setEnabled(v) { enabled = !!v; if (!v) this.stop(); },
     isEnabled: () => enabled,
-    supported: () => !!synth,
+    supported: () => !!(synth || KA()),
     available,
-    /* "voice" (a real Khmer voice is installed), "trying" (no enumerated voice
-       yet, but we haven't hit a failure), or "missing" (proven unavailable). */
+    /* "clips"  — recorded Khmer library is loaded (works everywhere)
+       "voice"  — a real Khmer TTS voice is installed
+       "trying" — no clips, no enumerated voice, no failure yet
+       "missing"— proven silent here */
     kmState() {
+      if (KA()) return "clips";
+      if (synth && pickVoice("km")) return "voice";
       if (!synth) return "missing";
-      if (pickVoice("km")) return "voice";
       return kmStatus === "missing" ? "missing" : "trying";
     },
   };

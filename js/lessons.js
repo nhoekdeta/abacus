@@ -115,10 +115,11 @@ window.Lessons = (function () {
         `<button class="say-btn" aria-label="${t("say.replay")}">🔊</button>`;
       if (this.i > 0) pulse(e.prompt, "change");
 
-      const line = t(step.say) + (step.finger ? ". " + t("finger." + step.finger) : "");
+      const lines = [t(step.say)];
+      if (step.finger) lines.push(t("finger." + step.finger));
       const sb = e.prompt.querySelector(".say-btn");
-      if (sb) sb.onclick = () => { pulse(sb, "ring"); Speech.speakHtml(line, I18N.getLang()); };
-      Speech.speakHtml(line, I18N.getLang());
+      if (sb) sb.onclick = () => { pulse(sb, "ring"); Speech.speakSeq(lines, I18N.getLang()); };
+      Speech.speakSeq(lines, I18N.getLang());
 
       // feedback + next
       e.feedback.hidden = true;

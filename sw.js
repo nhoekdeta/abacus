@@ -1,10 +1,11 @@
 /* Offline cache for Peanick & Ponita Playground. Bump CACHE when files change. */
-const CACHE = "peanick-ponita-v15";
+const CACHE = "peanick-ponita-v16";
 const ASSETS = [
   "./",
   "./index.html",
   "./css/styles.css",
   "./js/i18n.js",
+  "./js/khmer-audio.js",
   "./js/speech.js",
   "./js/bgfx.js",
   "./js/audio.js",
@@ -17,7 +18,10 @@ const ASSETS = [
   "./js/app.js",
   "./manifest.webmanifest",
   "./icons/icon.svg",
+  "./audio/km/manifest.json",
 ];
+// Khmer voice clips (audio/km/*.mp3) are cached on demand by the fetch handler;
+// khmer-audio.js warms them in the background on first load.
 
 self.addEventListener("install", (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(ASSETS)).then(() => self.skipWaiting()));

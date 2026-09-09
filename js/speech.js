@@ -94,19 +94,28 @@ window.Speech = (function () {
       u.rate = 0.9;
       u.pitch = 1.05;
 
-      if (isKm) {
-        let settled = false;
+      if (isKm && v) {
+        kmStatus = "ok";
+      } else if (isKm) {
+        // No real Khmer voice enumerated. We still try (Android / iOS / ChromeOS
+        // often speak km-KH anyway), but desktop Chrome "completes" instantly
+        // with NO audio — start and end fire within a few ms. So we time it:
+        // a genuine utterance of a real phrase takes hundreds of ms or more.
+        let startedAt = 0, settled = false;
         const mark = (s) => { settled = true; kmStatus = s; };
-        u.addEventListener("start", () => mark("ok"));
-        u.addEventListener("end", () => { if (!settled) mark("ok"); });
+        u.addEventListener("start", () => { startedAt = (performance && performance.now) ? performance.now() : Date.now(); });
+        u.addEventListener("end", () => {
+          if (settled) return;
+          const ms = startedAt ? (((performance && performance.now) ? performance.now() : Date.now()) - startedAt) : 0;
+          mark((words.length >= 4 && ms < 300) ? "missing" : "ok");
+        });
         u.addEventListener("error", (e) => {
           const err = (e && e.error) || "";
           if (err === "interrupted" || err === "canceled" || err === "not-allowed") return;
           mark("missing");
         });
-        // Some engines just do nothing for an unsupported language — no start,
-        // no error. If we've heard nothing back shortly, treat it as missing.
-        setTimeout(() => { if (!settled && kmStatus === "unknown") kmStatus = "missing"; }, 2000);
+        // Engine did nothing at all — no start, no end, no error.
+        setTimeout(() => { if (!settled && kmStatus === "unknown") kmStatus = "missing"; }, 2500);
       }
 
       synth.speak(u);

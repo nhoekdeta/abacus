@@ -1,5 +1,5 @@
 /* Offline cache for Peanick & Ponita Playground. Bump CACHE when files change. */
-const CACHE = "peanick-ponita-v13";
+const CACHE = "peanick-ponita-v14";
 const ASSETS = [
   "./",
   "./index.html",

@@ -98,7 +98,7 @@ window.Worksheets = (function () {
       },
     },
     {
-      id: "friends", icon: "🖐️", age: "6-8",
+      id: "friends", icon: "🤝", age: "6-8",
       make(level) {
         const L = clampLvl(level);
         const rows = L <= 4 ? 3 : L <= 7 ? R(3, 4) : R(4, 5);

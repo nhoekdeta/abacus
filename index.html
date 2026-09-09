@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+<meta name="theme-color" content="#1b2a4a" />
+<title>Peanick &amp; Ponita Playground</title>
+<link rel="manifest" href="manifest.webmanifest" />
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml" />
+<link rel="apple-touch-icon" href="icons/icon.svg" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Noto+Sans+Khmer:wght@500;700&display=swap" />
+<link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+<div class="bg-decor" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+<div id="app">
+
+  <!-- ================= HOME / PROFILE PICKER ================= -->
+  <section id="screen-home" class="screen is-active">
+    <header class="home-head">
+      <h1 class="logo"><span class="logo-ico">🧮</span> <span data-i18n="app.name">Peanick &amp; Ponita Playground</span></h1>
+      <p class="tagline" data-i18n="app.tagline">Play and learn with the abacus</p>
+    </header>
+
+    <div id="profile-list" class="profile-list"><!-- filled by JS --></div>
+
+    <button id="add-profile" class="btn btn-ghost btn-add" data-i18n="home.addPlayer">＋ Add a player</button>
+
+    <button id="lang-toggle" class="lang-toggle">🌐 English</button>
+  </section>
+
+  <!-- ================= MENU ================= -->
+  <section id="screen-menu" class="screen">
+    <header class="bar">
+      <button class="btn btn-icon" data-go="home" aria-label="Back to players">🏠</button>
+      <div class="who">
+        <span id="menu-avatar" class="avatar-sm">🐢</span>
+        <span id="menu-name">Player</span>
+        <span id="menu-stars" class="stars-chip">⭐ 0</span>
+      </div>
+      <button class="btn btn-icon" id="menu-settings" aria-label="Player settings">⚙️</button>
+    </header>
+
+    <button id="pet-banner" class="pet-banner"><!-- filled by JS --></button>
+
+    <h2 class="section-title" data-i18n="menu.learn">Learn the Abacus</h2>
+    <div id="lesson-grid" class="tile-grid"><!-- filled by JS --></div>
+
+    <h2 class="section-title" data-i18n="menu.freePlay">Free Play</h2>
+    <div class="tile-grid">
+      <button class="tile tile-abacus" data-play="abacus">
+        <span class="tile-emoji">🧮</span>
+        <span class="tile-label" data-i18n="menu.abacus">Abacus</span>
+        <span class="tile-sub" data-i18n="menu.abacusSub">Explore and count</span>
+      </button>
+    </div>
+
+    <h2 class="section-title" data-i18n="menu.games">Games</h2>
+    <div id="game-grid" class="tile-grid"><!-- filled by JS --></div>
+  </section>
+
+  <!-- ================= PLAY (abacus / games share this) ================= -->
+  <section id="screen-play" class="screen">
+    <header class="bar">
+      <button class="btn btn-icon" data-go="menu" aria-label="Back to menu">◀</button>
+      <div id="play-title" class="play-title">Abacus</div>
+      <div id="play-score" class="stars-chip">⭐ 0</div>
+    </header>
+
+    <div id="level-toast" class="level-toast"></div>
+
+    <div id="prompt" class="prompt" hidden></div>
+
+    <div id="finger-hint" class="finger-hint" hidden></div>
+
+    <div id="abacus-mount" class="abacus-mount"></div>
+
+    <div id="readout" class="readout" hidden>
+      <span class="readout-label" data-i18n="play.value">Value</span>
+      <span id="readout-value" class="readout-value">0</span>
+    </div>
+
+    <div id="game-controls" class="game-controls" hidden></div>
+
+    <div id="feedback" class="feedback" hidden></div>
+
+    <div id="mascot" class="mascot" hidden><span id="mascot-face">🐢</span></div>
+
+    <div id="play-actions" class="play-actions">
+      <button id="btn-reset" class="btn btn-soft" data-i18n="play.reset">↺ Reset beads</button>
+      <button id="btn-check" class="btn btn-primary" data-i18n="play.check" hidden>Check ✓</button>
+      <button id="btn-next" class="btn btn-primary" data-i18n="play.next" hidden>Next ▶</button>
+    </div>
+  </section>
+
+  <!-- ================= MY BUDDY ================= -->
+  <section id="screen-pet" class="screen">
+    <header class="bar">
+      <button class="btn btn-icon" data-go="menu" aria-label="Back to menu">◀</button>
+      <div id="pet-screen-title" class="play-title">My Buddy</div>
+      <div id="pet-treats" class="stars-chip">🍎 0</div>
+    </header>
+    <div id="pet-stage" class="pet-stage"></div>
+  </section>
+
+</div>
+
+<!-- ================= MODALS ================= -->
+<div id="modal-root" class="modal-root" hidden>
+  <div class="modal-card">
+    <div id="modal-body"></div>
+  </div>
+</div>
+
+<div id="confetti" class="confetti" aria-hidden="true"></div>
+
+<script src="js/i18n.js"></script>
+<script src="js/speech.js"></script>
+<script src="js/bgfx.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/music.js"></script>
+<script src="js/storage.js"></script>
+<script src="js/abacus.js"></script>
+<script src="js/games.js"></script>
+<script src="js/lessons.js"></script>
+<script src="js/pet.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

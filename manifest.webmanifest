@@ -1,0 +1,14 @@
+{
+  "name": "Peanick & Ponita Playground",
+  "short_name": "P & P Playground",
+  "description": "A friendly abacus and number-game app for kids aged 3–12.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#12213f",
+  "theme_color": "#1b2a4a",
+  "icons": [
+    { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}

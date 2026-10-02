@@ -25,6 +25,11 @@ window.I18N = (function () {
       "menu.learn": "Learn the Abacus",
       "menu.abacus": "Abacus",
       "menu.abacusSub": "Explore and count",
+      "menu.sayIt": "Say the Number",
+      "menu.sayItSub": "Read it, then hear it",
+      "say.sayIt": "Say this number out loud!",
+      "say.show": "👀 Show the word",
+      "say.again": "🔊 Hear again",
       "menu.level": "Lv {n}",
       "menu.lessonDone": "✓ done",
 
@@ -262,6 +267,11 @@ window.I18N = (function () {
       "menu.learn": "រៀនក្តារគិតលេខ",
       "menu.abacus": "ក្តារគិតលេខ",
       "menu.abacusSub": "ស្វែងយល់ និងរាប់",
+      "menu.sayIt": "អានលេខ",
+      "menu.sayItSub": "អានចេញសំឡេង រួចស្តាប់",
+      "say.sayIt": "សូមអានលេខនេះឱ្យឮៗ!",
+      "say.show": "👀 បង្ហាញពាក្យ",
+      "say.again": "🔊 ស្តាប់ម្តងទៀត",
       "menu.level": "កម្រិត {n}",
       "menu.lessonDone": "✓ រួចរាល់",
 

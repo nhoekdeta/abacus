@@ -25,6 +25,7 @@
   let petScreen = null;    // active PetScreen
   let freeAbacus = null;   // free-play Abacus
   let worksheet = null;    // active WorksheetSession
+  let sayit = null;        // active SayIt session
 
   function show(name) {
     Object.values(screens).forEach(s => s.classList.remove("is-active"));
@@ -393,6 +394,7 @@
     if (session) { session.destroy(); session = null; }
     if (lesson) { lesson.destroy(); lesson = null; }
     if (worksheet) { worksheet.destroy(); worksheet = null; }
+    if (sayit) { sayit.destroy(); sayit = null; }
     closePet();
     freeAbacus = null;
     playEls.abacusMount.innerHTML = "";
@@ -432,6 +434,18 @@
     playEls.btnReset.onclick = () => { freeAbacus.reset(); Sound.click(); };
     Music.play("menu");
     show("play");
+  }
+
+  /* ---- say the number ---- */
+  function openSayIt() {
+    resetPlayScreen();
+    $("#play-title").textContent = t("menu.sayIt");
+    playEls.score.textContent = "🗣️";
+    playEls.abacusMount.hidden = true;
+    sayit = new SayIt.Session(playEls);
+    Music.play("menu");
+    show("play");
+    sayit.start();
   }
 
   /* ---- lessons ---- */
@@ -788,6 +802,7 @@
   });
   $$("[data-play]").forEach(b => b.onclick = () => {
     if (b.dataset.play === "abacus") openAbacus();
+    else if (b.dataset.play === "sayit") openSayIt();
   });
 
   /* ===================== modal helpers ===================== */

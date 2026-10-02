@@ -1,5 +1,5 @@
 /* Offline cache for Peanick & Ponita Playground. Bump CACHE when files change. */
-const CACHE = "peanick-ponita-v20";
+const CACHE = "peanick-ponita-v21";
 const ASSETS = [
   "./",
   "./index.html",
@@ -14,6 +14,7 @@ const ASSETS = [
   "./js/abacus.js",
   "./js/games.js",
   "./js/lessons.js",
+  "./js/sayit.js",
   "./js/worksheets.js",
   "./js/pet.js",
   "./js/app.js",

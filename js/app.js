@@ -437,15 +437,59 @@
   }
 
   /* ---- say the number ---- */
-  function openSayIt() {
+  function openSayIt(range) {
     resetPlayScreen();
     $("#play-title").textContent = t("menu.sayIt");
     playEls.score.textContent = "🗣️";
     playEls.abacusMount.hidden = true;
-    sayit = new SayIt.Session(playEls);
+    sayit = new SayIt.Session(playEls, { range, onRange: () => openSayItRange() });
     Music.play("menu");
     show("play");
     sayit.start();
+  }
+
+  // Pick the From/To range for "Say the Number" (presets or custom), then (re)start.
+  function openSayItRange(first) {
+    const L = SayIt.LIMIT;
+    let { min, max } = SayIt.loadRange();
+    const PRESETS = [[1, 10], [1, 20], [1, 50], [1, L]];
+    function body(err) {
+      return `
+        <h3>🗣️ ${t("menu.sayIt")}</h3>
+        <div class="field">
+          <label>${t("say.range")}</label>
+          <div class="pick-row" id="sr-presets">
+            ${PRESETS.map(([a, b]) => `<button data-a="${a}" data-b="${b}" class="${a === min && b === max ? "sel" : ""}">${a}–${b}</button>`).join("")}
+          </div>
+        </div>
+        <div class="field say-custom">
+          <label>${t("say.from")} <input type="number" id="sr-min" min="1" max="${L}" value="${min}" inputmode="numeric" /></label>
+          <label>${t("say.to")} <input type="number" id="sr-max" min="1" max="${L}" value="${max}" inputmode="numeric" /></label>
+        </div>
+        ${err ? `<p class="field-note">${t("say.rangeErr", { max: L })}</p>` : ""}
+        <div class="modal-actions">
+          <button class="btn btn-soft" id="sr-cancel">${t("common.cancel")}</button>
+          <button class="btn btn-primary" id="sr-go">${t("ws.start")}</button>
+        </div>`;
+    }
+    function wire() {
+      $("#sr-presets").onclick = (e) => {
+        const b = e.target.closest("button"); if (!b) return;
+        min = +b.dataset.a; max = +b.dataset.b; refresh();
+      };
+      $("#sr-cancel").onclick = () => { closeModal(); if (first) openMenu(); };
+      $("#sr-go").onclick = () => {
+        const a = Math.round(+$("#sr-min").value), b = Math.round(+$("#sr-max").value);
+        if (!(a >= 1 && b <= L && a <= b)) { min = a || 1; max = b || L; refresh(true); return; }
+        const r = { min: a, max: b };
+        SayIt.saveRange(r);
+        closeModal();
+        openSayIt(r);
+      };
+    }
+    function refresh(err) { $("#modal-body").innerHTML = body(err); wire(); }
+    openModal(body());
+    wire();
   }
 
   /* ---- lessons ---- */
@@ -802,7 +846,7 @@
   });
   $$("[data-play]").forEach(b => b.onclick = () => {
     if (b.dataset.play === "abacus") openAbacus();
-    else if (b.dataset.play === "sayit") openSayIt();
+    else if (b.dataset.play === "sayit") openSayItRange(true);
   });
 
   /* ===================== modal helpers ===================== */

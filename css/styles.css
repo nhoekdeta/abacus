@@ -861,3 +861,7 @@ html[lang="km"] .prompt,html[lang="km"] .lesson-say{line-height:1.75}
 .say-word{background:var(--panel);border-radius:var(--radius);text-align:center;font-size:2.2rem;font-weight:800;
   padding:14px;margin-bottom:10px;color:var(--accent);text-transform:capitalize;animation:popIn .4s cubic-bezier(.34,1.7,.5,1)}
 .say-again{display:block;margin:0 auto}
+.say-range{display:block;margin:14px auto 0;font-size:.95rem}
+.say-custom{display:flex;gap:14px}
+.say-custom label{flex:1;font-weight:700}
+.say-custom input{width:100%;margin-top:4px;padding:10px;font-size:1.2rem;font-weight:800;text-align:center;border-radius:12px;border:2px solid #ccd;box-sizing:border-box}

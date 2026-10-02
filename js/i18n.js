@@ -30,6 +30,10 @@ window.I18N = (function () {
       "say.sayIt": "Say this number out loud!",
       "say.show": "👀 Show the word",
       "say.again": "🔊 Hear again",
+      "say.range": "Numbers",
+      "say.from": "From",
+      "say.to": "To",
+      "say.rangeErr": "Pick two numbers from 1 to {max}, with the first one smaller.",
       "menu.level": "Lv {n}",
       "menu.lessonDone": "✓ done",
 
@@ -272,6 +276,10 @@ window.I18N = (function () {
       "say.sayIt": "សូមអានលេខនេះឱ្យឮៗ!",
       "say.show": "👀 បង្ហាញពាក្យ",
       "say.again": "🔊 ស្តាប់ម្តងទៀត",
+      "say.range": "លេខ",
+      "say.from": "ពី",
+      "say.to": "ដល់",
+      "say.rangeErr": "សូមជ្រើសលេខពីរពី 1 ដល់ {max} ហើយលេខទីមួយត្រូវតូចជាង។",
       "menu.level": "កម្រិត {n}",
       "menu.lessonDone": "✓ រួចរាល់",
 

@@ -22,9 +22,25 @@ window.SayIt = (function () {
     return EN_TENS[Math.floor(n / 10)] + (o ? "-" + EN_ONES[o] : "");
   }
 
-  const pickNext = (prev) => {
+  const LIMIT = 100;
+  const clamp = (n, lo, hi) => Math.max(lo, Math.min(hi, n));
+  const KEY = "pp.sayRange";
+
+  // Saved range, always sane: 1 <= min <= max <= 100.
+  function loadRange() {
+    try {
+      const r = JSON.parse(localStorage.getItem(KEY));
+      const min = clamp(Math.round(+r.min), 1, LIMIT), max = clamp(Math.round(+r.max), 1, LIMIT);
+      if (min <= max) return { min, max };
+    } catch (e) {}
+    return { min: 1, max: LIMIT };
+  }
+  function saveRange(r) { try { localStorage.setItem(KEY, JSON.stringify(r)); } catch (e) {} }
+
+  const pickNext = (prev, r) => {
+    if (r.max === r.min) return r.min;
     let n;
-    do { n = 1 + Math.floor(Math.random() * 100); } while (n === prev);
+    do { n = r.min + Math.floor(Math.random() * (r.max - r.min + 1)); } while (n === prev);
     return n;
   };
 
@@ -34,6 +50,15 @@ window.SayIt = (function () {
       this.opts = opts || {};
       this.n = 0;
       this.revealed = false;
+      this.range = this.opts.range || loadRange();
+    }
+
+    rangeBtn() {
+      return `<button class="btn btn-ghost say-range" id="say-range">🎚️ ${t("say.range")} ${this.range.min}–${this.range.max}</button>`;
+    }
+    wireRange() {
+      const b = document.getElementById("say-range");
+      if (b) b.onclick = () => { Sound.click(); this.opts.onRange && this.opts.onRange(); };
     }
 
     start() {
@@ -43,16 +68,17 @@ window.SayIt = (function () {
 
     next() {
       Speech.stop();
-      this.n = pickNext(this.n);
+      this.n = pickNext(this.n, this.range);
       this.revealed = false;
       const { prompt, controls, btnNext } = this.els;
       prompt.hidden = false;
       prompt.innerHTML = `${t("say.sayIt")}<span class="big say-num">${this.n}</span>`;
       controls.hidden = false;
-      controls.innerHTML = `<button class="btn btn-primary say-reveal" id="say-reveal">${t("say.show")}</button>`;
+      controls.innerHTML = `<button class="btn btn-primary say-reveal" id="say-reveal">${t("say.show")}</button>` + this.rangeBtn();
       btnNext.hidden = true;
       this.els.feedback.hidden = true;
       document.getElementById("say-reveal").onclick = () => this.reveal();
+      this.wireRange();
     }
 
     reveal() {
@@ -63,8 +89,9 @@ window.SayIt = (function () {
       const { controls, btnNext } = this.els;
       controls.innerHTML =
         `<div class="say-word">${words(this.n, lang)}</div>` +
-        `<button class="btn btn-soft say-again" id="say-again">${t("say.again")}</button>`;
+        `<button class="btn btn-soft say-again" id="say-again">${t("say.again")}</button>` + this.rangeBtn();
       document.getElementById("say-again").onclick = () => this.speak();
+      this.wireRange();
       btnNext.hidden = false;
       this.speak();
     }
@@ -82,5 +109,5 @@ window.SayIt = (function () {
     }
   }
 
-  return { Session, words };
+  return { Session, words, loadRange, saveRange, LIMIT };
 })();
